@@ -1,0 +1,8 @@
+set -xe
+
+CFLAGS="-Wall -O2 -Iinclude"
+
+mkdir -p build
+cc $CFLAGS -c -o build/cattl.o cattl.c
+cc $CFLAGS -o build/main build/cattl.o main.c
+./build/main
