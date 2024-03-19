@@ -44,6 +44,6 @@ void *cattl_get(cattl_object *obj, const char *name);
 cattl_object *cattl_read(char *data);
 char *cattl_write(cattl_object *obj);
 
-char *cattl_read_int128(cattl_reader *reader);
+int cattl_read_int_be(cattl_reader *reader);
 
-void cattl_write_int128(cattl_writer *writer, char *data);
+char *cattl_read_int128(cattl_reader *reader);

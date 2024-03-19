@@ -52,16 +52,6 @@ void cattl_add_handler(unsigned int hash, cattl_object_reader reader, cattl_obje
 	handlers[handlers_length - 1] = handler;
 }
 
-int cattl_read_int_be(cattl_reader *reader) {
-    int value =
-        (reader->data[reader->position] & 0xFF) |
-        (reader->data[reader->position + 1] & 0xFF) << 8 |
-        (reader->data[reader->position + 2] & 0xFF) << 16 |
-        (reader->data[reader->position + 3] & 0xFF) << 24;
-    reader->position += 4;
-    return value;
-}
-
 cattl_object *cattl_read(char *data) {
     cattl_reader reader = { .data = data, .position = 0 };
 
@@ -75,10 +65,4 @@ cattl_object *cattl_read(char *data) {
     }
 
     return obj;
-}
-
-// int128 is not really a convenient type in C, so just store it in char* instead
-char *cattl_read_int128(cattl_reader *reader) {
-    reader->position += 16;
-    return reader->data + reader->position - 16;
 }

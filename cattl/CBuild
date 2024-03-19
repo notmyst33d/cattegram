@@ -3,6 +3,16 @@ set -xe
 CFLAGS="-Wall -O2 -Iinclude"
 
 mkdir -p build
-cc $CFLAGS -c -o build/cattl.o cattl.c
-cc $CFLAGS -o build/main build/cattl.o main.c
-./build/main
+
+cc $CFLAGS -c -o build/cattl.o src/cattl.c
+cc $CFLAGS -c -o build/int.o src/int.c
+cc $CFLAGS -c -o build/int128.o src/int128.c
+
+ar r build/libcattl.a \
+	build/cattl.o \
+	build/int.o \
+	build/int128.o
+
+cc $CFLAGS -Lbuild -lcattl -o build/test src/test.c modules/mtproto.c
+
+./build/test
