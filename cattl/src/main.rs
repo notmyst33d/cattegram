@@ -3,6 +3,7 @@ mod bytes_buffer;
 mod mtproto;
 
 use std::time::{Duration, SystemTime};
+use crate::tl_object::TlObject;
 use crate::bytes_buffer::BytesBuffer;
 use crate::mtproto::*;
 
@@ -15,7 +16,12 @@ fn main() {
     let start = SystemTime::now();
     loop {
         let obj = tl_object::read(&mut data).unwrap();
-        let req_pq_multi = obj.downcast_ref::<ReqPqMulti>().unwrap();
+
+        // Very stinky cast, but should be safe
+        let req_pq_multi = unsafe {
+            ((&*obj as *const dyn TlObject) as *const ReqPqMulti).as_ref().unwrap()
+        };
+
         assert!(req_pq_multi.nonce == 123);
         data.seek(0);
         i += 1;
