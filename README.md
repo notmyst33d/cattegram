@@ -1,9 +1,9 @@
 # Telecat
-Telegram backend reimplementation based on publicly known information
+Telegram backend reimplementation
 
 ## Goals
 * Fully compliant implementation
 
 ## Modules
-* cattl - Type Language (de)serialization library (C)
-* cattlc - Type Language to CatTL Module compiler (Rust)
+* cattl - Extremely fast Type Language library
+* cattlc - Type Language to CatTL Module compiler
