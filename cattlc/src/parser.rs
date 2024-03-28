@@ -15,7 +15,7 @@ pub enum Type {
 #[derive(Debug)]
 pub struct TypeDefinition {
     pub r#type: Type,
-    pub inner: Option<Type>,
+    pub inner: Option<Box<TypeDefinition>>,
     pub schema_type: Option<String>,
 }
 
@@ -39,10 +39,11 @@ pub fn parse(source: Vec<String>) -> Vec<Definition> {
 
     let resolve_type = |t| {
         match t {
+            "int" => Type::INT,
             "int128" => Type::INT128,
             "long" => Type::LONG,
             "bytes" => Type::BYTES,
-            "Vector" => Type::VECTOR,
+            "Vector" | "vector" => Type::VECTOR,
             _ => Type::SCHEMA,
         }
     };
@@ -65,8 +66,21 @@ pub fn parse(source: Vec<String>) -> Vec<Definition> {
                     schema_type: None,
                 };
 
+                if typedef.r#type == Type::SCHEMA {
+                    typedef.schema_type = Some(r#type.clone());
+                }
+
                 if typedef.r#type == Type::VECTOR {
-                    typedef.inner = Some(resolve_type(&source[i + 2]));
+                    typedef.inner = Some(Box::new(TypeDefinition {
+                        r#type: resolve_type(&source[i + 2]),
+                        inner: None,
+                        schema_type: None,
+                    }));
+                    if let Some(ref mut inner) = typedef.inner {
+                        if inner.r#type == Type::SCHEMA {
+                            inner.schema_type = Some(source[i + 2].clone());
+                        }
+                    }
                     i += 3;
                 }
 
