@@ -1,5 +1,3 @@
-use core::any::Any;
-
 use crate::bytes_buffer::BytesBuffer;
 
 static mut READERS: Vec<(u32, fn(&mut BytesBuffer) -> Option<Box<dyn TlObject>>)> = vec![];
