@@ -1,7 +1,5 @@
-# cattl
-CatTL is an extremely fast Type Language (de)serialization library
+# CatTL
+Extremely fast Type Language library
 
 ## Features
-* No external dependencies
-* 100% pure and cross-platform C
-* Easy API designed for FFI
+* Decodes 17 million `req_pq_multi` objects per second on a single core on Ryzen 5 3500U (~34x faster than Pyrogram TLObject reader)
