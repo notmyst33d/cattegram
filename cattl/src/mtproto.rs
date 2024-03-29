@@ -5,9 +5,9 @@ use crate::tl_object::TlObject;
 use crate::tl_object::add_reader;
 use crate::bytes_buffer::BytesBuffer;
 
+#[allow(non_camel_case_types)]
 #[derive(Debug, Default)]
 pub struct resPQ {
-pub hash: i32,
 pub nonce: i128,
 pub server_nonce: i128,
 pub pq: &'static [u8],
@@ -15,12 +15,26 @@ pub server_public_key_fingerprints: Vec<i64>,
 }
 impl TlObject for resPQ {
     fn hash(&self) -> i32 {
-        self.hash
+        85337187
+    }
+    fn write(&self, data: &mut BytesBuffer) {
+        data.write_int(85337187);
+data.write_int128(self.nonce);
+data.write_int128(self.server_nonce);
+data.write_bytes(self.pq);
+{
+    data.write_int(0x1cb5c415);
+    data.write_int(self.server_public_key_fingerprints.len() as i32);
+    for element in &self.server_public_key_fingerprints {
+        data.write_long(*element);
+    }
+};
+
     }
 }
+#[allow(non_snake_case)]
 pub fn read_raw_resPQ(data: &mut BytesBuffer) -> Option<resPQ> {
 let mut obj = resPQ::default();
-obj.hash = 85337187;
 obj.nonce = data.read_int128()?;
 obj.server_nonce = data.read_int128()?;
 obj.pq = data.read_bytes()?;
@@ -43,26 +57,33 @@ obj.server_public_key_fingerprints = {
 };
 Some(obj)
 }
+#[allow(non_snake_case)]
 pub fn read_resPQ(data: &mut BytesBuffer) -> Option<Box<dyn Any>> {
 Some(Box::new(read_raw_resPQ(data)?))
 }
 
+#[allow(non_camel_case_types)]
 #[derive(Debug, Default)]
 pub struct req_pq_multi {
-pub hash: i32,
 pub nonce: i128,
 }
 impl TlObject for req_pq_multi {
     fn hash(&self) -> i32 {
-        self.hash
+        -1099002127
+    }
+    fn write(&self, data: &mut BytesBuffer) {
+        data.write_int(-1099002127);
+data.write_int128(self.nonce);
+
     }
 }
+#[allow(non_snake_case)]
 pub fn read_raw_req_pq_multi(data: &mut BytesBuffer) -> Option<req_pq_multi> {
 let mut obj = req_pq_multi::default();
-obj.hash = -1099002127;
 obj.nonce = data.read_int128()?;
 Some(obj)
 }
+#[allow(non_snake_case)]
 pub fn read_req_pq_multi(data: &mut BytesBuffer) -> Option<Box<dyn Any>> {
 Some(Box::new(read_raw_req_pq_multi(data)?))
 }

@@ -3,7 +3,6 @@ mod bytes_buffer;
 mod mtproto;
 
 use std::time::{Duration, SystemTime};
-use crate::tl_object::TlObject;
 use crate::bytes_buffer::BytesBuffer;
 use crate::mtproto::*;
 

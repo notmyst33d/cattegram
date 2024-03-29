@@ -1,14 +1,42 @@
+use std::ptr::copy_nonoverlapping;
+
+macro_rules! impl_primitive_write {
+    ($n:tt, $s:expr, $t:ty) => {
+        pub fn $n(&mut self, value: $t) {
+            if self.position + $s > self.data.len() {
+                self.data.resize(self.data.len() + $s, 0);
+            }
+            self.position += $s;
+            unsafe {
+                (self.data.as_ptr().add(self.position - $s) as *mut $t).write_unaligned(value)
+            }
+        }
+    };
+}
+
+macro_rules! impl_primitive_read {
+    ($n:tt, $s:expr, $t:ty) => {
+        pub fn $n(&mut self) -> Option<$t> {
+            if self.position + $s > self.data.len() {
+                return None;
+            }
+            self.position += $s;
+            Some(unsafe {
+                (self.data.as_ptr().add(self.position - $s) as *const $t).read_unaligned()
+            })
+        }
+    };
+}
+
 #[derive(Debug)]
 pub struct BytesBuffer {
     data: Vec<u8>,
-    raw_ptr: *const u8,
     position: usize,
 }
 
 impl BytesBuffer {
     pub fn new(data: Vec<u8>) -> Self {
-        let ptr = data.as_ptr();
-        Self { data, raw_ptr: ptr, position: 0 }
+        Self { data, position: 0 }
     }
 
     pub fn position(&self) -> usize {
@@ -19,45 +47,19 @@ impl BytesBuffer {
         self.position = position;
     }
 
-    pub fn read_byte(&mut self) -> Option<i8> {
-        if self.position + 1 > self.data.len() {
-            return None;
-        }
-        self.position += 1;
-        Some(unsafe {
-            (self.raw_ptr.add(self.position - 1) as *const i8).read_unaligned()
-        })
+    pub fn data(&self) -> Vec<u8> {
+        self.data.to_vec()
     }
 
-    pub fn read_int(&mut self) -> Option<i32> {
-        if self.position + 4 > self.data.len() {
-            return None;
-        }
-        self.position += 4;
-        Some(unsafe {
-            (self.raw_ptr.add(self.position - 4) as *const i32).read_unaligned()
-        })
-    }
+    impl_primitive_read!(read_byte, 1, i8);
+    impl_primitive_read!(read_int, 4, i32);
+    impl_primitive_read!(read_long, 8, i64);
+    impl_primitive_read!(read_int128, 16, i128);
 
-    pub fn read_long(&mut self) -> Option<i64> {
-        if self.position + 8 > self.data.len() {
-            return None;
-        }
-        self.position += 8;
-        Some(unsafe {
-            (self.raw_ptr.add(self.position - 8) as *const i64).read_unaligned()
-        })
-    }
-
-    pub fn read_int128(&mut self) -> Option<i128> {
-        if self.position + 16 > self.data.len() {
-            return None;
-        }
-        self.position += 16;
-        Some(unsafe {
-            (self.raw_ptr.add(self.position - 16) as *const i128).read_unaligned()
-        })
-    }
+    impl_primitive_write!(write_byte, 1, i8);
+    impl_primitive_write!(write_int, 4, i32);
+    impl_primitive_write!(write_long, 8, i64);
+    impl_primitive_write!(write_int128, 16, i128);
 
     pub fn read_bytes(&mut self) -> Option<&'static [u8]> {
         if self.position + 1 > self.data.len() {
@@ -69,7 +71,42 @@ impl BytesBuffer {
         }
         self.position += length;
         Some(unsafe {
-            std::slice::from_raw_parts(self.raw_ptr.add(self.position - length), length)
+            std::slice::from_raw_parts(self.data.as_ptr().add(self.position - length), length)
         })
+    }
+
+    pub fn write_bytes(&mut self, value: &[u8]) {
+        if self.position + value.len() + 1 > self.data.len() {
+            self.data.resize(self.data.len() + value.len() + 1, 0);
+        }
+        self.write_byte(value.len() as i8);
+        self.position += value.len();
+        unsafe {
+            copy_nonoverlapping(value.as_ptr(), self.data.as_ptr().add(self.position - value.len()) as *mut u8, value.len())
+        }
+        let padding = (-(value.len() as i32 + 1)).rem_euclid(4);
+        for _ in 0..padding {
+            self.write_byte(0);
+        }
+    }
+
+    pub fn read_raw(&mut self, length: usize) -> Option<&'static [u8]> {
+        if self.position + length > self.data.len() {
+            return None;
+        }
+        self.position += length;
+        Some(unsafe {
+            std::slice::from_raw_parts(self.data.as_ptr().add(self.position - length), length)
+        })
+    }
+
+    pub fn write_raw(&mut self, value: &[u8]) {
+        if self.position + value.len() > self.data.len() {
+            self.data.resize(self.data.len() + value.len(), 0);
+        }
+        self.position += value.len();
+        unsafe {
+            copy_nonoverlapping(value.as_ptr(), self.data.as_ptr().add(self.position - value.len()) as *mut u8, value.len())
+        }
     }
 }

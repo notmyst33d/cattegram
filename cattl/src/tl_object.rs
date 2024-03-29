@@ -6,6 +6,7 @@ static mut READERS: Vec<(i32, fn(&mut BytesBuffer) -> Option<Box<dyn Any>>)> = v
 
 pub trait TlObject {
     fn hash(&self) -> i32;
+    fn write(&self, data: &mut BytesBuffer);
 }
 
 pub fn add_reader(hash: i32, reader: fn(&mut BytesBuffer) -> Option<Box<dyn Any>>) {
