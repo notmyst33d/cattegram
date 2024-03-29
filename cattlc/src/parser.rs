@@ -27,7 +27,7 @@ pub struct Param {
 
 #[derive(Debug, Default)]
 pub struct Definition {
-    pub id: u32,
+    pub id: i32,
     pub predicate: String,
     pub params: Vec<Param>
 }
@@ -93,7 +93,7 @@ pub fn parse(source: Vec<String>) -> Vec<Definition> {
             },
             "#" => {
                 definition.predicate = source[i - 1].clone();
-                definition.id = u32::from_str_radix(&source[i + 1], 16).unwrap();
+                definition.id = u32::from_str_radix(&source[i + 1], 16).unwrap() as i32;
                 i += 1;
             },
             &_ => {},
