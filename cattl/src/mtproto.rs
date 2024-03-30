@@ -64,6 +64,301 @@ Some(Box::new(read_raw_resPQ(data)?))
 
 #[allow(non_camel_case_types)]
 #[derive(Debug, Default)]
+pub struct p_q_inner_data_dc {
+pub pq: &'static [u8],
+pub p: &'static [u8],
+pub q: &'static [u8],
+pub nonce: i128,
+pub server_nonce: i128,
+pub new_nonce: &'static [u8],
+pub dc: i32,
+}
+impl TlObject for p_q_inner_data_dc {
+    fn hash(&self) -> i32 {
+        -1443537003
+    }
+    fn write(&self, data: &mut BytesBuffer) {
+        data.write_int(-1443537003);
+data.write_bytes(self.pq);
+data.write_bytes(self.p);
+data.write_bytes(self.q);
+data.write_int128(self.nonce);
+data.write_int128(self.server_nonce);
+data.write_raw(self.new_nonce);
+data.write_int(self.dc);
+
+    }
+}
+#[allow(non_snake_case)]
+pub fn read_raw_p_q_inner_data_dc(data: &mut BytesBuffer) -> Option<p_q_inner_data_dc> {
+let mut obj = p_q_inner_data_dc::default();
+obj.pq = data.read_bytes()?;
+obj.p = data.read_bytes()?;
+obj.q = data.read_bytes()?;
+obj.nonce = data.read_int128()?;
+obj.server_nonce = data.read_int128()?;
+obj.new_nonce = data.read_raw(32)?;
+obj.dc = data.read_int()?;
+Some(obj)
+}
+#[allow(non_snake_case)]
+pub fn read_p_q_inner_data_dc(data: &mut BytesBuffer) -> Option<Box<dyn Any>> {
+Some(Box::new(read_raw_p_q_inner_data_dc(data)?))
+}
+
+#[allow(non_camel_case_types)]
+#[derive(Debug, Default)]
+pub struct p_q_inner_data_temp_dc {
+pub pq: &'static [u8],
+pub p: &'static [u8],
+pub q: &'static [u8],
+pub nonce: i128,
+pub server_nonce: i128,
+pub new_nonce: &'static [u8],
+pub dc: i32,
+pub expires_in: i32,
+}
+impl TlObject for p_q_inner_data_temp_dc {
+    fn hash(&self) -> i32 {
+        1459478408
+    }
+    fn write(&self, data: &mut BytesBuffer) {
+        data.write_int(1459478408);
+data.write_bytes(self.pq);
+data.write_bytes(self.p);
+data.write_bytes(self.q);
+data.write_int128(self.nonce);
+data.write_int128(self.server_nonce);
+data.write_raw(self.new_nonce);
+data.write_int(self.dc);
+data.write_int(self.expires_in);
+
+    }
+}
+#[allow(non_snake_case)]
+pub fn read_raw_p_q_inner_data_temp_dc(data: &mut BytesBuffer) -> Option<p_q_inner_data_temp_dc> {
+let mut obj = p_q_inner_data_temp_dc::default();
+obj.pq = data.read_bytes()?;
+obj.p = data.read_bytes()?;
+obj.q = data.read_bytes()?;
+obj.nonce = data.read_int128()?;
+obj.server_nonce = data.read_int128()?;
+obj.new_nonce = data.read_raw(32)?;
+obj.dc = data.read_int()?;
+obj.expires_in = data.read_int()?;
+Some(obj)
+}
+#[allow(non_snake_case)]
+pub fn read_p_q_inner_data_temp_dc(data: &mut BytesBuffer) -> Option<Box<dyn Any>> {
+Some(Box::new(read_raw_p_q_inner_data_temp_dc(data)?))
+}
+
+#[allow(non_camel_case_types)]
+#[derive(Debug, Default)]
+pub struct server_DH_params_ok {
+pub nonce: i128,
+pub server_nonce: i128,
+pub encrypted_answer: &'static [u8],
+}
+impl TlObject for server_DH_params_ok {
+    fn hash(&self) -> i32 {
+        -790100132
+    }
+    fn write(&self, data: &mut BytesBuffer) {
+        data.write_int(-790100132);
+data.write_int128(self.nonce);
+data.write_int128(self.server_nonce);
+data.write_bytes(self.encrypted_answer);
+
+    }
+}
+#[allow(non_snake_case)]
+pub fn read_raw_server_DH_params_ok(data: &mut BytesBuffer) -> Option<server_DH_params_ok> {
+let mut obj = server_DH_params_ok::default();
+obj.nonce = data.read_int128()?;
+obj.server_nonce = data.read_int128()?;
+obj.encrypted_answer = data.read_bytes()?;
+Some(obj)
+}
+#[allow(non_snake_case)]
+pub fn read_server_DH_params_ok(data: &mut BytesBuffer) -> Option<Box<dyn Any>> {
+Some(Box::new(read_raw_server_DH_params_ok(data)?))
+}
+
+#[allow(non_camel_case_types)]
+#[derive(Debug, Default)]
+pub struct server_DH_inner_data {
+pub nonce: i128,
+pub server_nonce: i128,
+pub g: i32,
+pub dh_prime: &'static [u8],
+pub g_a: &'static [u8],
+pub server_time: i32,
+}
+impl TlObject for server_DH_inner_data {
+    fn hash(&self) -> i32 {
+        -1249309254
+    }
+    fn write(&self, data: &mut BytesBuffer) {
+        data.write_int(-1249309254);
+data.write_int128(self.nonce);
+data.write_int128(self.server_nonce);
+data.write_int(self.g);
+data.write_bytes(self.dh_prime);
+data.write_bytes(self.g_a);
+data.write_int(self.server_time);
+
+    }
+}
+#[allow(non_snake_case)]
+pub fn read_raw_server_DH_inner_data(data: &mut BytesBuffer) -> Option<server_DH_inner_data> {
+let mut obj = server_DH_inner_data::default();
+obj.nonce = data.read_int128()?;
+obj.server_nonce = data.read_int128()?;
+obj.g = data.read_int()?;
+obj.dh_prime = data.read_bytes()?;
+obj.g_a = data.read_bytes()?;
+obj.server_time = data.read_int()?;
+Some(obj)
+}
+#[allow(non_snake_case)]
+pub fn read_server_DH_inner_data(data: &mut BytesBuffer) -> Option<Box<dyn Any>> {
+Some(Box::new(read_raw_server_DH_inner_data(data)?))
+}
+
+#[allow(non_camel_case_types)]
+#[derive(Debug, Default)]
+pub struct client_DH_inner_data {
+pub nonce: i128,
+pub server_nonce: i128,
+pub retry_id: i64,
+pub g_b: &'static [u8],
+}
+impl TlObject for client_DH_inner_data {
+    fn hash(&self) -> i32 {
+        1715713620
+    }
+    fn write(&self, data: &mut BytesBuffer) {
+        data.write_int(1715713620);
+data.write_int128(self.nonce);
+data.write_int128(self.server_nonce);
+data.write_long(self.retry_id);
+data.write_bytes(self.g_b);
+
+    }
+}
+#[allow(non_snake_case)]
+pub fn read_raw_client_DH_inner_data(data: &mut BytesBuffer) -> Option<client_DH_inner_data> {
+let mut obj = client_DH_inner_data::default();
+obj.nonce = data.read_int128()?;
+obj.server_nonce = data.read_int128()?;
+obj.retry_id = data.read_long()?;
+obj.g_b = data.read_bytes()?;
+Some(obj)
+}
+#[allow(non_snake_case)]
+pub fn read_client_DH_inner_data(data: &mut BytesBuffer) -> Option<Box<dyn Any>> {
+Some(Box::new(read_raw_client_DH_inner_data(data)?))
+}
+
+#[allow(non_camel_case_types)]
+#[derive(Debug, Default)]
+pub struct dh_gen_ok {
+pub nonce: i128,
+pub server_nonce: i128,
+pub new_nonce_hash1: i128,
+}
+impl TlObject for dh_gen_ok {
+    fn hash(&self) -> i32 {
+        1003222836
+    }
+    fn write(&self, data: &mut BytesBuffer) {
+        data.write_int(1003222836);
+data.write_int128(self.nonce);
+data.write_int128(self.server_nonce);
+data.write_int128(self.new_nonce_hash1);
+
+    }
+}
+#[allow(non_snake_case)]
+pub fn read_raw_dh_gen_ok(data: &mut BytesBuffer) -> Option<dh_gen_ok> {
+let mut obj = dh_gen_ok::default();
+obj.nonce = data.read_int128()?;
+obj.server_nonce = data.read_int128()?;
+obj.new_nonce_hash1 = data.read_int128()?;
+Some(obj)
+}
+#[allow(non_snake_case)]
+pub fn read_dh_gen_ok(data: &mut BytesBuffer) -> Option<Box<dyn Any>> {
+Some(Box::new(read_raw_dh_gen_ok(data)?))
+}
+
+#[allow(non_camel_case_types)]
+#[derive(Debug, Default)]
+pub struct dh_gen_retry {
+pub nonce: i128,
+pub server_nonce: i128,
+pub new_nonce_hash2: i128,
+}
+impl TlObject for dh_gen_retry {
+    fn hash(&self) -> i32 {
+        1188831161
+    }
+    fn write(&self, data: &mut BytesBuffer) {
+        data.write_int(1188831161);
+data.write_int128(self.nonce);
+data.write_int128(self.server_nonce);
+data.write_int128(self.new_nonce_hash2);
+
+    }
+}
+#[allow(non_snake_case)]
+pub fn read_raw_dh_gen_retry(data: &mut BytesBuffer) -> Option<dh_gen_retry> {
+let mut obj = dh_gen_retry::default();
+obj.nonce = data.read_int128()?;
+obj.server_nonce = data.read_int128()?;
+obj.new_nonce_hash2 = data.read_int128()?;
+Some(obj)
+}
+#[allow(non_snake_case)]
+pub fn read_dh_gen_retry(data: &mut BytesBuffer) -> Option<Box<dyn Any>> {
+Some(Box::new(read_raw_dh_gen_retry(data)?))
+}
+
+#[allow(non_camel_case_types)]
+#[derive(Debug, Default)]
+pub struct dh_gen_fail {
+pub nonce: i128,
+pub server_nonce: i128,
+pub new_nonce_hash3: i128,
+}
+impl TlObject for dh_gen_fail {
+    fn hash(&self) -> i32 {
+        -1499615742
+    }
+    fn write(&self, data: &mut BytesBuffer) {
+        data.write_int(-1499615742);
+data.write_int128(self.nonce);
+data.write_int128(self.server_nonce);
+data.write_int128(self.new_nonce_hash3);
+
+    }
+}
+#[allow(non_snake_case)]
+pub fn read_raw_dh_gen_fail(data: &mut BytesBuffer) -> Option<dh_gen_fail> {
+let mut obj = dh_gen_fail::default();
+obj.nonce = data.read_int128()?;
+obj.server_nonce = data.read_int128()?;
+obj.new_nonce_hash3 = data.read_int128()?;
+Some(obj)
+}
+#[allow(non_snake_case)]
+pub fn read_dh_gen_fail(data: &mut BytesBuffer) -> Option<Box<dyn Any>> {
+Some(Box::new(read_raw_dh_gen_fail(data)?))
+}
+
+#[allow(non_camel_case_types)]
+#[derive(Debug, Default)]
 pub struct req_pq_multi {
 pub nonce: i128,
 }
@@ -88,7 +383,90 @@ pub fn read_req_pq_multi(data: &mut BytesBuffer) -> Option<Box<dyn Any>> {
 Some(Box::new(read_raw_req_pq_multi(data)?))
 }
 
+#[allow(non_camel_case_types)]
+#[derive(Debug, Default)]
+pub struct req_DH_params {
+pub nonce: i128,
+pub server_nonce: i128,
+pub p: &'static [u8],
+pub q: &'static [u8],
+pub public_key_fingerprint: i64,
+pub encrypted_data: &'static [u8],
+}
+impl TlObject for req_DH_params {
+    fn hash(&self) -> i32 {
+        -686627650
+    }
+    fn write(&self, data: &mut BytesBuffer) {
+        data.write_int(-686627650);
+data.write_int128(self.nonce);
+data.write_int128(self.server_nonce);
+data.write_bytes(self.p);
+data.write_bytes(self.q);
+data.write_long(self.public_key_fingerprint);
+data.write_bytes(self.encrypted_data);
+
+    }
+}
+#[allow(non_snake_case)]
+pub fn read_raw_req_DH_params(data: &mut BytesBuffer) -> Option<req_DH_params> {
+let mut obj = req_DH_params::default();
+obj.nonce = data.read_int128()?;
+obj.server_nonce = data.read_int128()?;
+obj.p = data.read_bytes()?;
+obj.q = data.read_bytes()?;
+obj.public_key_fingerprint = data.read_long()?;
+obj.encrypted_data = data.read_bytes()?;
+Some(obj)
+}
+#[allow(non_snake_case)]
+pub fn read_req_DH_params(data: &mut BytesBuffer) -> Option<Box<dyn Any>> {
+Some(Box::new(read_raw_req_DH_params(data)?))
+}
+
+#[allow(non_camel_case_types)]
+#[derive(Debug, Default)]
+pub struct set_client_DH_params {
+pub nonce: i128,
+pub server_nonce: i128,
+pub encrypted_data: &'static [u8],
+}
+impl TlObject for set_client_DH_params {
+    fn hash(&self) -> i32 {
+        -184262881
+    }
+    fn write(&self, data: &mut BytesBuffer) {
+        data.write_int(-184262881);
+data.write_int128(self.nonce);
+data.write_int128(self.server_nonce);
+data.write_bytes(self.encrypted_data);
+
+    }
+}
+#[allow(non_snake_case)]
+pub fn read_raw_set_client_DH_params(data: &mut BytesBuffer) -> Option<set_client_DH_params> {
+let mut obj = set_client_DH_params::default();
+obj.nonce = data.read_int128()?;
+obj.server_nonce = data.read_int128()?;
+obj.encrypted_data = data.read_bytes()?;
+Some(obj)
+}
+#[allow(non_snake_case)]
+pub fn read_set_client_DH_params(data: &mut BytesBuffer) -> Option<Box<dyn Any>> {
+Some(Box::new(read_raw_set_client_DH_params(data)?))
+}
+
 pub fn init() {
 add_reader(85337187, read_resPQ);
+add_reader(-1443537003, read_p_q_inner_data_dc);
+add_reader(1459478408, read_p_q_inner_data_temp_dc);
+add_reader(-790100132, read_server_DH_params_ok);
+add_reader(-1249309254, read_server_DH_inner_data);
+add_reader(1715713620, read_client_DH_inner_data);
+add_reader(1003222836, read_dh_gen_ok);
+add_reader(1188831161, read_dh_gen_retry);
+add_reader(-1499615742, read_dh_gen_fail);
 add_reader(-1099002127, read_req_pq_multi);
+add_reader(-686627650, read_req_DH_params);
+add_reader(-184262881, read_set_client_DH_params);
 }
