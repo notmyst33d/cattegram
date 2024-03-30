@@ -11,7 +11,7 @@ fn compile_type(r#type: &TypeDefinition) -> String {
         Type::INT => "i32".into(),
         Type::INT128 => "i128".into(),
         Type::LONG => "i64".into(),
-        Type::BYTES => "&'static [u8]".into(),
+        Type::BYTES | Type::INT256 => "&'static [u8]".into(),
         Type::OBJECT => "Box<dyn TlObject>".into(),
         Type::SCHEMA => normalize(r#type.schema_type.as_ref().unwrap()),
         Type::VECTOR => {
@@ -43,6 +43,7 @@ fn compile_single_write(r#type: &TypeDefinition, name: &str) -> String {
         Type::LONG => format!("data.write_long({})", name),
         Type::INT => format!("data.write_int({})", name),
         Type::INT128 => format!("data.write_int128({})", name),
+        Type::INT256 => format!("data.write_raw({})", name),
         Type::BYTES => format!("data.write_bytes({})", name),
         Type::VECTOR => format!(r#"{{
     data.write_int(0x1cb5c415);
@@ -61,6 +62,7 @@ fn compile_single_read(r#type: &TypeDefinition) -> String {
         Type::LONG => "data.read_long()?".into(),
         Type::INT => "data.read_int()?".into(),
         Type::INT128 => "data.read_int128()?".into(),
+        Type::INT256 => "data.read_raw(32)?".into(),
         Type::BYTES => "data.read_bytes()?".into(),
         Type::VECTOR => format!(r#"{{
     let mut vector_data = vec![];

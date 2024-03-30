@@ -41,6 +41,7 @@ pub fn parse(source: Vec<String>) -> Vec<Definition> {
         match t {
             "int" => Type::INT,
             "int128" => Type::INT128,
+            "int256" => Type::INT256,
             "long" => Type::LONG,
             "bytes" => Type::BYTES,
             "Vector" | "vector" => Type::VECTOR,
