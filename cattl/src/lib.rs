@@ -4,3 +4,4 @@ pub mod mtproto;
 
 pub use crate::bytes_buffer::BytesBuffer;
 pub use crate::tl_object::read;
+pub use crate::tl_object::TlObject;
