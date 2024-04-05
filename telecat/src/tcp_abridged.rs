@@ -1,8 +1,9 @@
 use std::error::Error;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
-use async_trait::async_trait;
 use crate::transport::Transport;
+use crate::types::AsyncResult;
+use async_trait::async_trait;
 
 pub struct TcpAbridged {
     socket: TcpStream,

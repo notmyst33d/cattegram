@@ -9,11 +9,11 @@ enum SessionState {
 
 pub struct Session {
     state: SessionState,
-    transport: Box<dyn Transport + Send>,
+    transport: Box<dyn Transport + Send + Sync>,
 }
 
 impl Session {
-    pub fn new(transport: Box<dyn Transport + Send>) -> Self {
+    pub fn new(transport: Box<dyn Transport + Send + Sync>) -> Self {
         Self { state: SessionState::AuthKey, transport }
     }
 
