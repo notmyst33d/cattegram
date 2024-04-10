@@ -1,3 +1,5 @@
+#![feature(trait_upcasting)]
+
 mod tcp_abridged;
 mod transport;
 mod session;
