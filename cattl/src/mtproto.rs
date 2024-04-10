@@ -416,16 +416,16 @@ Ok(obj)
 
 
 pub fn extend_reader(reader: &mut TlReader) {
-reader.add_reader(85337187, |data| read_resPQ(data).map(|o| Box::new(o) as Box<dyn TlObject>));
-reader.add_reader(-1443537003, |data| read_p_q_inner_data_dc(data).map(|o| Box::new(o) as Box<dyn TlObject>));
-reader.add_reader(1459478408, |data| read_p_q_inner_data_temp_dc(data).map(|o| Box::new(o) as Box<dyn TlObject>));
-reader.add_reader(-790100132, |data| read_server_DH_params_ok(data).map(|o| Box::new(o) as Box<dyn TlObject>));
-reader.add_reader(-1249309254, |data| read_server_DH_inner_data(data).map(|o| Box::new(o) as Box<dyn TlObject>));
-reader.add_reader(1715713620, |data| read_client_DH_inner_data(data).map(|o| Box::new(o) as Box<dyn TlObject>));
-reader.add_reader(1003222836, |data| read_dh_gen_ok(data).map(|o| Box::new(o) as Box<dyn TlObject>));
-reader.add_reader(1188831161, |data| read_dh_gen_retry(data).map(|o| Box::new(o) as Box<dyn TlObject>));
-reader.add_reader(-1499615742, |data| read_dh_gen_fail(data).map(|o| Box::new(o) as Box<dyn TlObject>));
-reader.add_reader(-1099002127, |data| read_req_pq_multi(data).map(|o| Box::new(o) as Box<dyn TlObject>));
-reader.add_reader(-686627650, |data| read_req_DH_params(data).map(|o| Box::new(o) as Box<dyn TlObject>));
-reader.add_reader(-184262881, |data| read_set_client_DH_params(data).map(|o| Box::new(o) as Box<dyn TlObject>));
+reader.add_reader(85337187, |data| read_resPQ(data).map(|o| Box::new(o) as Box<dyn TlObject + Send + Sync>));
+reader.add_reader(-1443537003, |data| read_p_q_inner_data_dc(data).map(|o| Box::new(o) as Box<dyn TlObject + Send + Sync>));
+reader.add_reader(1459478408, |data| read_p_q_inner_data_temp_dc(data).map(|o| Box::new(o) as Box<dyn TlObject + Send + Sync>));
+reader.add_reader(-790100132, |data| read_server_DH_params_ok(data).map(|o| Box::new(o) as Box<dyn TlObject + Send + Sync>));
+reader.add_reader(-1249309254, |data| read_server_DH_inner_data(data).map(|o| Box::new(o) as Box<dyn TlObject + Send + Sync>));
+reader.add_reader(1715713620, |data| read_client_DH_inner_data(data).map(|o| Box::new(o) as Box<dyn TlObject + Send + Sync>));
+reader.add_reader(1003222836, |data| read_dh_gen_ok(data).map(|o| Box::new(o) as Box<dyn TlObject + Send + Sync>));
+reader.add_reader(1188831161, |data| read_dh_gen_retry(data).map(|o| Box::new(o) as Box<dyn TlObject + Send + Sync>));
+reader.add_reader(-1499615742, |data| read_dh_gen_fail(data).map(|o| Box::new(o) as Box<dyn TlObject + Send + Sync>));
+reader.add_reader(-1099002127, |data| read_req_pq_multi(data).map(|o| Box::new(o) as Box<dyn TlObject + Send + Sync>));
+reader.add_reader(-686627650, |data| read_req_DH_params(data).map(|o| Box::new(o) as Box<dyn TlObject + Send + Sync>));
+reader.add_reader(-184262881, |data| read_set_client_DH_params(data).map(|o| Box::new(o) as Box<dyn TlObject + Send + Sync>));
 }

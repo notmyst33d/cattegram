@@ -126,7 +126,7 @@ pub fn compile_extend_reader(definitions: &Vec<Definition>) -> String {
 
     code += "pub fn extend_reader(reader: &mut TlReader) {\n";
     for definition in definitions {
-        code += &format!("reader.add_reader({}, |data| read_{}(data).map(|o| Box::new(o) as Box<dyn TlObject>));\n", definition.id, normalize(&definition.predicate));
+        code += &format!("reader.add_reader({}, |data| read_{}(data).map(|o| Box::new(o) as Box<dyn TlObject + Send + Sync>));\n", definition.id, normalize(&definition.predicate));
     }
     code += "}";
 

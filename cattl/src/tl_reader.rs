@@ -11,7 +11,7 @@ impl TlReader {
         s
     }
 
-    pub fn read(&self, data: &mut BytesBuffer) -> Result<Box<dyn TlObject>, TlError> {
+    pub fn read(&self, data: &mut BytesBuffer) -> Result<Box<dyn TlObject + Send + Sync>, TlError> {
         let hash = data.read_int()?;
 
         for reader in &self.readers {
