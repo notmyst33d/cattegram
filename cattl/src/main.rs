@@ -1,21 +1,16 @@
-mod tl_object;
-mod bytes_buffer;
-mod mtproto;
-
 use std::time::{Duration, SystemTime};
-use crate::bytes_buffer::BytesBuffer;
-use crate::mtproto::*;
+use cattl::{TlObject, TlReader, BytesBuffer, mtproto};
 
 fn main() {
     let mut data = BytesBuffer::new(std::fs::read("data/req_pq_multi.bin").unwrap());
-    init();
+    let reader = TlReader::new();
 
     let mut i = 0;
     let duration = Duration::from_secs(1);
     let start = SystemTime::now();
     loop {
-        let obj = tl_object::read(&mut data).unwrap();
-        let rpq = obj.downcast::<req_pq_multi>().unwrap();
+        let obj = reader.read(&mut data).unwrap();
+        let rpq = unsafe { (&*obj as *const dyn TlObject as *const mtproto::req_pq_multi).as_ref().unwrap() };
         assert!(rpq.nonce == 123);
 
         data.seek(0);

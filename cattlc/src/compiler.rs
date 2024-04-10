@@ -67,12 +67,11 @@ fn compile_single_read(r#type: &TypeDefinition) -> String {
         Type::VECTOR => format!(r#"{{
     let mut vector_data = vec![];
     let vector_header = data.read_int()?;
-    let mut length = 0;
-    if vector_header == 0x1cb5c415 {{
-        length = data.read_int()?;
+    let length = if vector_header == 0x1cb5c415 {{
+        data.read_int()?
     }} else {{
-        length = vector_header;
-    }}
+        vector_header
+    }};
 
     for _ in 0..length {{
         let value = {};
@@ -110,29 +109,24 @@ pub fn compile_reader(definition: &Definition) -> String {
     let mut code = String::new();
 
     code += "#[allow(non_snake_case)]\n";
-    code += &format!("pub fn read_raw_{}(data: &mut BytesBuffer) -> Option<{0}> {{\n", normalize(&definition.predicate));
+    code += &format!("pub fn read_{}(data: &mut BytesBuffer) -> Result<{0}, TlError> {{\n", normalize(&definition.predicate));
     code += &format!("let mut obj = {}::default();\n", normalize(&definition.predicate));
 
     for param in &definition.params {
         code += &format!("obj.{} = {};\n", param.name, compile_single_read(&param.r#type));
     }
 
-    code += "Some(obj)\n";
+    code += "Ok(obj)\n";
     code += "}\n";
-
-    code += "#[allow(non_snake_case)]\n";
-    code += &format!("pub fn read_{}(data: &mut BytesBuffer) -> Option<Box<dyn Any>> {{\n", normalize(&definition.predicate));
-    code += &format!("Some(Box::new(read_raw_{}(data)?))\n", normalize(&definition.predicate));
-    code += "}";
     code
 }
 
-pub fn compile_initializer(definitions: &Vec<Definition>) -> String {
+pub fn compile_extend_reader(definitions: &Vec<Definition>) -> String {
     let mut code = String::new();
 
-    code += "pub fn init() {\n";
+    code += "pub fn extend_reader(reader: &mut TlReader) {\n";
     for definition in definitions {
-        code += &format!("add_reader({}, read_{});\n", definition.id, normalize(&definition.predicate));
+        code += &format!("reader.add_reader({}, |data| read_{}(data).map(|o| Box::new(o) as Box<dyn TlObject>));\n", definition.id, normalize(&definition.predicate));
     }
     code += "}";
 

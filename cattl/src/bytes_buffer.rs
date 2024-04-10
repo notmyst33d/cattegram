@@ -1,4 +1,5 @@
 use std::ptr::copy_nonoverlapping;
+use crate::TlError;
 
 macro_rules! impl_primitive_write {
     ($n:tt, $s:expr, $t:ty) => {
@@ -16,12 +17,12 @@ macro_rules! impl_primitive_write {
 
 macro_rules! impl_primitive_read {
     ($n:tt, $s:expr, $t:ty) => {
-        pub fn $n(&mut self) -> Option<$t> {
+        pub fn $n(&mut self) -> Result<$t, TlError> {
             if self.position + $s > self.data.len() {
-                return None;
+                return Err(TlError::NotEnoughData);
             }
             self.position += $s;
-            Some(unsafe {
+            Ok(unsafe {
                 (self.data.as_ptr().add(self.position - $s) as *const $t).read_unaligned()
             })
         }
@@ -61,16 +62,16 @@ impl BytesBuffer {
     impl_primitive_write!(write_long, 8, i64);
     impl_primitive_write!(write_int128, 16, i128);
 
-    pub fn read_bytes(&mut self) -> Option<&'static [u8]> {
+    pub fn read_bytes(&mut self) -> Result<&'static [u8], TlError> {
         if self.position + 1 > self.data.len() {
-            return None;
+            return Err(TlError::NotEnoughData);
         }
         let length = self.read_byte()? as usize;
         if self.position + length > self.data.len() {
-            return None;
+            return Err(TlError::NotEnoughData);
         }
         self.position += length;
-        Some(unsafe {
+        Ok(unsafe {
             std::slice::from_raw_parts(self.data.as_ptr().add(self.position - length), length)
         })
     }
@@ -90,12 +91,12 @@ impl BytesBuffer {
         }
     }
 
-    pub fn read_raw(&mut self, length: usize) -> Option<&'static [u8]> {
+    pub fn read_raw(&mut self, length: usize) -> Result<&'static [u8], TlError> {
         if self.position + length > self.data.len() {
-            return None;
+            return Err(TlError::NotEnoughData);
         }
         self.position += length;
-        Some(unsafe {
+        Ok(unsafe {
             std::slice::from_raw_parts(self.data.as_ptr().add(self.position - length), length)
         })
     }
