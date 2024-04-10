@@ -5,7 +5,7 @@ use cattl::mtproto::*;
 use crate::session::Session;
 use crate::rpc::{RpcResult, RpcMapping};
 
-pub async fn rpc_req_pq_multi(session: Arc<Mutex<Session>>, obj: &(dyn TlObject + Sync)) -> RpcResult {
+pub async fn rpc_req_pq_multi<'a>(session: Arc<Mutex<Session>>, obj: Box<dyn TlObject + Send + Sync + 'a>) -> RpcResult {
     Ok(Box::new(resPQ {
         nonce: 0,
         server_nonce: 0,

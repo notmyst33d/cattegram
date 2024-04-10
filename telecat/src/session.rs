@@ -1,6 +1,5 @@
 use std::error::Error;
-use cattl::BytesBuffer;
-use cattl::TlObject;
+use cattl::{TlObject, TlReader, BytesBuffer};
 use crate::transport::Transport;
 
 enum SessionState {
@@ -8,25 +7,23 @@ enum SessionState {
 }
 
 pub struct Session {
-    state: SessionState,
     transport: Box<dyn Transport + Send + Sync>,
+    state: SessionState,
+    reader: TlReader,
 }
 
 impl Session {
     pub fn new(transport: Box<dyn Transport + Send + Sync>) -> Self {
-        Self { state: SessionState::AuthKey, transport }
+        Self { transport, state: SessionState::AuthKey, reader: TlReader::new() }
     }
 
-    pub async fn receive_raw<T: 'static>(&mut self) -> Result<T, Box<dyn Error>> {
+    pub async fn receive_raw(&mut self) -> Result<Box<dyn TlObject + Send + Sync>, Box<dyn Error>> {
         let mut data = BytesBuffer::new(self.transport.read().await?);
         data.seek(20);
-        match cattl::read(&mut data).unwrap().downcast::<T>() {
-            Ok(result) => Ok(*result),
-            Err(_) => Err("Downcast failed".into()),
-        }
+        Ok(self.reader.read(&mut data)?)
     }
 
-    pub async fn send_raw(&mut self, obj: &(dyn TlObject + Send + Sync)) -> Result<(), Box<dyn Error>> {
+    pub async fn send_raw(&mut self, obj: Box<dyn TlObject + Send + Sync>) -> Result<(), Box<dyn Error>> {
         let mut data = BytesBuffer::new(vec![0; 20]);
         data.seek(20);
         obj.write(&mut data);

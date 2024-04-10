@@ -2,7 +2,6 @@ use std::error::Error;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
 use crate::transport::Transport;
-use crate::types::AsyncResult;
 use async_trait::async_trait;
 
 pub struct TcpAbridged {
