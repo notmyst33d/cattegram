@@ -1,4 +1,5 @@
 #![feature(trait_upcasting)]
+#![feature(allocator_api)]
 
 mod tcp_abridged;
 mod transport;
