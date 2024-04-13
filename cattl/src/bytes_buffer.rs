@@ -3,6 +3,7 @@ use crate::TlError;
 
 macro_rules! impl_primitive_write {
     ($n:tt, $s:expr, $t:ty) => {
+        #[inline]
         pub fn $n(&mut self, value: $t) {
             if self.position + $s > self.data.len() {
                 self.data.resize(self.data.len() + $s, 0);
@@ -17,6 +18,7 @@ macro_rules! impl_primitive_write {
 
 macro_rules! impl_primitive_read {
     ($n:tt, $s:expr, $t:ty) => {
+        #[inline]
         pub fn $n(&mut self) -> Result<$t, TlError> {
             if self.position + $s > self.data.len() {
                 return Err(TlError::NotEnoughData);
@@ -48,8 +50,8 @@ impl BytesBuffer {
         self.position = position;
     }
 
-    pub fn data(&self) -> Vec<u8> {
-        self.data.to_vec()
+    pub fn data(&self) -> &[u8] {
+        self.data.as_slice()
     }
 
     impl_primitive_read!(read_byte, 1, i8);
@@ -62,7 +64,7 @@ impl BytesBuffer {
     impl_primitive_write!(write_long, 8, i64);
     impl_primitive_write!(write_int128, 16, i128);
 
-    pub fn read_bytes(&mut self) -> Result<&'static [u8], TlError> {
+    pub fn read_bytes(&mut self) -> Result<Vec<u8>, TlError> {
         if self.position + 1 > self.data.len() {
             return Err(TlError::NotEnoughData);
         }
@@ -71,9 +73,7 @@ impl BytesBuffer {
             return Err(TlError::NotEnoughData);
         }
         self.position += length;
-        Ok(unsafe {
-            std::slice::from_raw_parts(self.data.as_ptr().add(self.position - length), length)
-        })
+        Ok(self.data[self.position - length..self.position].to_vec())
     }
 
     pub fn write_bytes(&mut self, value: &[u8]) {
@@ -91,14 +91,12 @@ impl BytesBuffer {
         }
     }
 
-    pub fn read_raw(&mut self, length: usize) -> Result<&'static [u8], TlError> {
+    pub fn read_raw(&mut self, length: usize) -> Result<Vec<u8>, TlError> {
         if self.position + length > self.data.len() {
             return Err(TlError::NotEnoughData);
         }
         self.position += length;
-        Ok(unsafe {
-            std::slice::from_raw_parts(self.data.as_ptr().add(self.position - length), length)
-        })
+        Ok(self.data[self.position - length..self.position].to_vec())
     }
 
     pub fn write_raw(&mut self, value: &[u8]) {

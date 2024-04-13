@@ -6,9 +6,15 @@ use crate::{TlObject, TlError, TlReader, BytesBuffer};
 pub struct resPQ {
 pub nonce: i128,
 pub server_nonce: i128,
-pub pq: &'static [u8],
+pub pq: Vec<u8>,
 pub server_public_key_fingerprints: Vec<i64>,
 }
+impl resPQ {
+    pub fn hash() -> i32 {
+        85337187
+    }
+}
+
 impl TlObject for resPQ {
     fn hash(&self) -> i32 {
         85337187
@@ -17,7 +23,7 @@ impl TlObject for resPQ {
         data.write_int(85337187);
 data.write_int128(self.nonce);
 data.write_int128(self.server_nonce);
-data.write_bytes(self.pq);
+data.write_bytes(&self.pq);
 {
     data.write_int(0x1cb5c415);
     data.write_int(self.server_public_key_fingerprints.len() as i32);
@@ -57,26 +63,32 @@ Ok(obj)
 #[allow(non_camel_case_types)]
 #[derive(Debug, Default)]
 pub struct p_q_inner_data_dc {
-pub pq: &'static [u8],
-pub p: &'static [u8],
-pub q: &'static [u8],
+pub pq: Vec<u8>,
+pub p: Vec<u8>,
+pub q: Vec<u8>,
 pub nonce: i128,
 pub server_nonce: i128,
-pub new_nonce: &'static [u8],
+pub new_nonce: Vec<u8>,
 pub dc: i32,
 }
+impl p_q_inner_data_dc {
+    pub fn hash() -> i32 {
+        -1443537003
+    }
+}
+
 impl TlObject for p_q_inner_data_dc {
     fn hash(&self) -> i32 {
         -1443537003
     }
     fn write(&self, data: &mut BytesBuffer) {
         data.write_int(-1443537003);
-data.write_bytes(self.pq);
-data.write_bytes(self.p);
-data.write_bytes(self.q);
+data.write_bytes(&self.pq);
+data.write_bytes(&self.p);
+data.write_bytes(&self.q);
 data.write_int128(self.nonce);
 data.write_int128(self.server_nonce);
-data.write_raw(self.new_nonce);
+data.write_raw(&self.new_nonce);
 data.write_int(self.dc);
 
     }
@@ -98,27 +110,33 @@ Ok(obj)
 #[allow(non_camel_case_types)]
 #[derive(Debug, Default)]
 pub struct p_q_inner_data_temp_dc {
-pub pq: &'static [u8],
-pub p: &'static [u8],
-pub q: &'static [u8],
+pub pq: Vec<u8>,
+pub p: Vec<u8>,
+pub q: Vec<u8>,
 pub nonce: i128,
 pub server_nonce: i128,
-pub new_nonce: &'static [u8],
+pub new_nonce: Vec<u8>,
 pub dc: i32,
 pub expires_in: i32,
 }
+impl p_q_inner_data_temp_dc {
+    pub fn hash() -> i32 {
+        1459478408
+    }
+}
+
 impl TlObject for p_q_inner_data_temp_dc {
     fn hash(&self) -> i32 {
         1459478408
     }
     fn write(&self, data: &mut BytesBuffer) {
         data.write_int(1459478408);
-data.write_bytes(self.pq);
-data.write_bytes(self.p);
-data.write_bytes(self.q);
+data.write_bytes(&self.pq);
+data.write_bytes(&self.p);
+data.write_bytes(&self.q);
 data.write_int128(self.nonce);
 data.write_int128(self.server_nonce);
-data.write_raw(self.new_nonce);
+data.write_raw(&self.new_nonce);
 data.write_int(self.dc);
 data.write_int(self.expires_in);
 
@@ -144,8 +162,14 @@ Ok(obj)
 pub struct server_DH_params_ok {
 pub nonce: i128,
 pub server_nonce: i128,
-pub encrypted_answer: &'static [u8],
+pub encrypted_answer: Vec<u8>,
 }
+impl server_DH_params_ok {
+    pub fn hash() -> i32 {
+        -790100132
+    }
+}
+
 impl TlObject for server_DH_params_ok {
     fn hash(&self) -> i32 {
         -790100132
@@ -154,7 +178,7 @@ impl TlObject for server_DH_params_ok {
         data.write_int(-790100132);
 data.write_int128(self.nonce);
 data.write_int128(self.server_nonce);
-data.write_bytes(self.encrypted_answer);
+data.write_bytes(&self.encrypted_answer);
 
     }
 }
@@ -174,10 +198,16 @@ pub struct server_DH_inner_data {
 pub nonce: i128,
 pub server_nonce: i128,
 pub g: i32,
-pub dh_prime: &'static [u8],
-pub g_a: &'static [u8],
+pub dh_prime: Vec<u8>,
+pub g_a: Vec<u8>,
 pub server_time: i32,
 }
+impl server_DH_inner_data {
+    pub fn hash() -> i32 {
+        -1249309254
+    }
+}
+
 impl TlObject for server_DH_inner_data {
     fn hash(&self) -> i32 {
         -1249309254
@@ -187,8 +217,8 @@ impl TlObject for server_DH_inner_data {
 data.write_int128(self.nonce);
 data.write_int128(self.server_nonce);
 data.write_int(self.g);
-data.write_bytes(self.dh_prime);
-data.write_bytes(self.g_a);
+data.write_bytes(&self.dh_prime);
+data.write_bytes(&self.g_a);
 data.write_int(self.server_time);
 
     }
@@ -212,8 +242,14 @@ pub struct client_DH_inner_data {
 pub nonce: i128,
 pub server_nonce: i128,
 pub retry_id: i64,
-pub g_b: &'static [u8],
+pub g_b: Vec<u8>,
 }
+impl client_DH_inner_data {
+    pub fn hash() -> i32 {
+        1715713620
+    }
+}
+
 impl TlObject for client_DH_inner_data {
     fn hash(&self) -> i32 {
         1715713620
@@ -223,7 +259,7 @@ impl TlObject for client_DH_inner_data {
 data.write_int128(self.nonce);
 data.write_int128(self.server_nonce);
 data.write_long(self.retry_id);
-data.write_bytes(self.g_b);
+data.write_bytes(&self.g_b);
 
     }
 }
@@ -245,6 +281,12 @@ pub nonce: i128,
 pub server_nonce: i128,
 pub new_nonce_hash1: i128,
 }
+impl dh_gen_ok {
+    pub fn hash() -> i32 {
+        1003222836
+    }
+}
+
 impl TlObject for dh_gen_ok {
     fn hash(&self) -> i32 {
         1003222836
@@ -274,6 +316,12 @@ pub nonce: i128,
 pub server_nonce: i128,
 pub new_nonce_hash2: i128,
 }
+impl dh_gen_retry {
+    pub fn hash() -> i32 {
+        1188831161
+    }
+}
+
 impl TlObject for dh_gen_retry {
     fn hash(&self) -> i32 {
         1188831161
@@ -303,6 +351,12 @@ pub nonce: i128,
 pub server_nonce: i128,
 pub new_nonce_hash3: i128,
 }
+impl dh_gen_fail {
+    pub fn hash() -> i32 {
+        -1499615742
+    }
+}
+
 impl TlObject for dh_gen_fail {
     fn hash(&self) -> i32 {
         -1499615742
@@ -330,6 +384,12 @@ Ok(obj)
 pub struct req_pq_multi {
 pub nonce: i128,
 }
+impl req_pq_multi {
+    pub fn hash() -> i32 {
+        -1099002127
+    }
+}
+
 impl TlObject for req_pq_multi {
     fn hash(&self) -> i32 {
         -1099002127
@@ -353,11 +413,17 @@ Ok(obj)
 pub struct req_DH_params {
 pub nonce: i128,
 pub server_nonce: i128,
-pub p: &'static [u8],
-pub q: &'static [u8],
+pub p: Vec<u8>,
+pub q: Vec<u8>,
 pub public_key_fingerprint: i64,
-pub encrypted_data: &'static [u8],
+pub encrypted_data: Vec<u8>,
 }
+impl req_DH_params {
+    pub fn hash() -> i32 {
+        -686627650
+    }
+}
+
 impl TlObject for req_DH_params {
     fn hash(&self) -> i32 {
         -686627650
@@ -366,10 +432,10 @@ impl TlObject for req_DH_params {
         data.write_int(-686627650);
 data.write_int128(self.nonce);
 data.write_int128(self.server_nonce);
-data.write_bytes(self.p);
-data.write_bytes(self.q);
+data.write_bytes(&self.p);
+data.write_bytes(&self.q);
 data.write_long(self.public_key_fingerprint);
-data.write_bytes(self.encrypted_data);
+data.write_bytes(&self.encrypted_data);
 
     }
 }
@@ -391,8 +457,14 @@ Ok(obj)
 pub struct set_client_DH_params {
 pub nonce: i128,
 pub server_nonce: i128,
-pub encrypted_data: &'static [u8],
+pub encrypted_data: Vec<u8>,
 }
+impl set_client_DH_params {
+    pub fn hash() -> i32 {
+        -184262881
+    }
+}
+
 impl TlObject for set_client_DH_params {
     fn hash(&self) -> i32 {
         -184262881
@@ -401,7 +473,7 @@ impl TlObject for set_client_DH_params {
         data.write_int(-184262881);
 data.write_int128(self.nonce);
 data.write_int128(self.server_nonce);
-data.write_bytes(self.encrypted_data);
+data.write_bytes(&self.encrypted_data);
 
     }
 }

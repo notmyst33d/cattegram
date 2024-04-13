@@ -11,7 +11,7 @@ fn compile_type(r#type: &TypeDefinition) -> String {
         Type::INT => "i32".into(),
         Type::INT128 => "i128".into(),
         Type::LONG => "i64".into(),
-        Type::BYTES | Type::INT256 => "&'static [u8]".into(),
+        Type::BYTES | Type::INT256 => "Vec<u8>".into(),
         Type::OBJECT => "Box<dyn TlObject>".into(),
         Type::SCHEMA => normalize(r#type.schema_type.as_ref().unwrap()),
         Type::VECTOR => {
@@ -43,8 +43,8 @@ fn compile_single_write(r#type: &TypeDefinition, name: &str) -> String {
         Type::LONG => format!("data.write_long({})", name),
         Type::INT => format!("data.write_int({})", name),
         Type::INT128 => format!("data.write_int128({})", name),
-        Type::INT256 => format!("data.write_raw({})", name),
-        Type::BYTES => format!("data.write_bytes({})", name),
+        Type::INT256 => format!("data.write_raw(&{})", name),
+        Type::BYTES => format!("data.write_bytes(&{})", name),
         Type::VECTOR => format!(r#"{{
     data.write_int(0x1cb5c415);
     data.write_int({0}.len() as i32);
@@ -86,12 +86,18 @@ fn compile_single_read(r#type: &TypeDefinition) -> String {
 }
 
 pub fn compile_tlobject_impl(definition: &Definition) -> String {
-    format!(r#"impl TlObject for {} {{
+    format!(r#"impl {0} {{
+    pub fn hash() -> i32 {{
+        {1}
+    }}
+}}
+
+impl TlObject for {0} {{
     fn hash(&self) -> i32 {{
-        {}
+        {1}
     }}
     fn write(&self, data: &mut BytesBuffer) {{
-        {}
+        {2}
     }}
 }}"#, normalize(&definition.predicate), definition.id, compile_writer(definition))
 }
