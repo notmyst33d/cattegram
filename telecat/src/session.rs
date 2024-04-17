@@ -29,6 +29,11 @@ impl Session {
     pub async fn receive_raw(&mut self) -> Result<Box<dyn TlObject + Send + Sync>, Box<dyn Error>> {
         let mut data = BytesBuffer::new(self.transport.read().await?);
         data.seek(20);
+        #[cfg(debug_assertions)] {
+            let all = data.data();
+            let datahex = all.into_iter().map(|v| format!("{:02x?}", v)).collect::<Vec<_>>().join("");
+            println!("trace: client -> server: {}", datahex);
+        }
         Ok(self.reader.read(&mut data)?)
     }
 
@@ -36,6 +41,11 @@ impl Session {
         let mut data = BytesBuffer::new(vec![0; 20]);
         data.seek(20);
         obj.write(&mut data);
+        #[cfg(debug_assertions)] {
+            let all = data.data();
+            let datahex = all.into_iter().map(|v| format!("{:02x?}", v)).collect::<Vec<_>>().join("");
+            println!("trace: server -> client: {}", datahex);
+        }
         self.transport.write(&data.data()).await?;
         Ok(())
     }

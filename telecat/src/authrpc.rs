@@ -1,7 +1,6 @@
 use std::sync::Arc;
 use std::any::Any;
 use tokio::sync::Mutex;
-use getrandom::getrandom;
 use cattl::mtproto::*;
 use crate::session::Session;
 use crate::rpc::{RpcResult, RpcMapping};
@@ -11,15 +10,18 @@ pub async fn rpc_req_pq_multi(session: Arc<Mutex<Session>>, req: Box<req_pq_mult
     let flow = &mut session.lock().await.auth_key_flow;
     flow.nonce = req.nonce;
 
+    // TODO: Get random server_nonce
+    flow.server_nonce = 0;
+
     // TODO: Remove temporary hardcoded p and q
     flow.p = 1305305213;
     flow.q = 1774703071;
 
     Ok(Box::new(resPQ {
         nonce: flow.nonce,
-        server_nonce: 0,
+        server_nonce: flow.server_nonce,
         pq: (flow.p as u64 * flow.q as u64).to_be_bytes().to_vec(),
-        server_public_key_fingerprints: vec![-4344800451088585951],
+        server_public_key_fingerprints: vec![-4344800451088585951], // TODO: Remove hardcoded fingerprint
     }))
 }
 
@@ -29,9 +31,7 @@ pub async fn rpc_req_DH_params(session: Arc<Mutex<Session>>, req: Box<req_DH_par
         return Err("nonce values altered".into())
     }
 
-    // TODO: cattl fails to deserialize this for some reason, so this will fail
-    println!("{}", req.public_key_fingerprint);
-    if req.public_key_fingerprint != -4344800451088585951 {
+    if req.public_key_fingerprint != -4344800451088585951 { // TODO: Remove hardcoded fingerprint
         return Err("unknown fingerprint".into())
     }
 
