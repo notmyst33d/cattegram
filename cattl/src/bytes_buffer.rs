@@ -1,5 +1,5 @@
-use std::ptr::copy_nonoverlapping;
 use crate::TlError;
+use std::ptr::copy_nonoverlapping;
 
 macro_rules! impl_primitive_write {
     ($n:tt, $s:expr, $t:ty) => {
@@ -73,39 +73,73 @@ impl BytesBuffer {
         self.position += 3;
         let mut value = 0;
         unsafe {
-            value |= (self.data.as_ptr().add(self.position - 3) as *const i8).read_unaligned() as i32;
-            value |= ((self.data.as_ptr().add(self.position - 2) as *const i8).read_unaligned() as i32) << 8;
-            value |= ((self.data.as_ptr().add(self.position - 1) as *const i8).read_unaligned() as i32) << 16;
+            value |=
+                (self.data.as_ptr().add(self.position - 3) as *const i8).read_unaligned() as i32;
+            value |= ((self.data.as_ptr().add(self.position - 2) as *const i8).read_unaligned()
+                as i32)
+                << 8;
+            value |= ((self.data.as_ptr().add(self.position - 1) as *const i8).read_unaligned()
+                as i32)
+                << 16;
         }
         Ok(value)
     }
 
-    pub fn read_bytes(&mut self) -> Result<Vec<u8>, TlError> {
-        if self.position + 1 > self.data.len() {
-            return Err(TlError::NotEnoughData);
+    #[inline]
+    pub fn write_int24(&mut self, value: i32) {
+        if self.position + 3 > self.data.len() {
+            self.data.resize(self.data.len() + 3, 0);
         }
+        self.position += 3;
+        let b1 = value & 0xff;
+        let b2 = (value >> 8) & 0xff;
+        let b3 = (value >> 16) & 0xff;
+        unsafe {
+            (self.data.as_ptr().add(self.position - 3) as *mut i8).write_unaligned(b1 as i8);
+            (self.data.as_ptr().add(self.position - 2) as *mut i8).write_unaligned(b2 as i8);
+            (self.data.as_ptr().add(self.position - 1) as *mut i8).write_unaligned(b3 as i8);
+        }
+    }
+
+    pub fn read_bytes(&mut self) -> Result<Vec<u8>, TlError> {
         let mut length = self.read_byte()? as usize;
+        let mut additional_length = 1;
         if (length & 0xff) == 0xfe {
             length = self.read_int24()? as usize;
+            additional_length = 0;
         }
         if self.position + length > self.data.len() {
             return Err(TlError::NotEnoughData);
         }
-        let padding = 4 - (length + 1).rem_euclid(4);
+        let padding = (4 - ((length + additional_length) % 4)) % 4;
         self.position += length + padding;
         Ok(self.data[self.position - (length + padding)..self.position - padding].to_vec())
     }
 
     pub fn write_bytes(&mut self, value: &[u8]) {
-        if self.position + value.len() + 1 > self.data.len() {
-            self.data.resize(self.data.len() + value.len() + 1, 0);
+        let mut additional_length = 1;
+        if value.len() >= 0xfe {
+            if self.position + value.len() + 4 > self.data.len() {
+                self.data.resize(self.data.len() + value.len() + 4, 0);
+            }
+            self.write_byte(0xfeu8 as i8);
+            self.write_int24(value.len() as i32);
+            additional_length = 0;
+        } else {
+            if self.position + value.len() + 1 > self.data.len() {
+                self.data.resize(self.data.len() + value.len() + 1, 0);
+            }
+            self.write_byte(value.len() as i8);
         }
-        self.write_byte(value.len() as i8);
         self.position += value.len();
         unsafe {
-            copy_nonoverlapping(value.as_ptr(), self.data.as_ptr().add(self.position - value.len()) as *mut u8, value.len())
+            copy_nonoverlapping(
+                value.as_ptr(),
+                self.data.as_ptr().add(self.position - value.len()) as *mut u8,
+                value.len(),
+            )
         }
-        let padding = 4 - (value.len() + 1).rem_euclid(4);
+        let padding = (4 - ((value.len() + additional_length) % 4)) % 4;
         for _ in 0..padding {
             self.write_byte(0);
         }
@@ -125,7 +159,11 @@ impl BytesBuffer {
         }
         self.position += value.len();
         unsafe {
-            copy_nonoverlapping(value.as_ptr(), self.data.as_ptr().add(self.position - value.len()) as *mut u8, value.len())
+            copy_nonoverlapping(
+                value.as_ptr(),
+                self.data.as_ptr().add(self.position - value.len()) as *mut u8,
+                value.len(),
+            )
         }
     }
 }

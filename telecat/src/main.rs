@@ -1,23 +1,29 @@
 #![feature(trait_upcasting)]
 #![feature(allocator_api)]
 
-mod tcp_abridged;
-mod transport;
-mod session;
 mod authrpc;
 mod instance;
+mod prime;
 mod rpc;
+mod rsa;
+mod session;
+mod tcp_abridged;
+mod transport;
 
+use crate::instance::Instance;
+use crate::session::Session;
+use crate::tcp_abridged::TcpAbridged;
+use session::SessionState;
 use std::error::Error;
 use std::sync::Arc;
-use tokio::sync::Mutex;
-use tokio::net::{TcpListener, TcpStream};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
-use crate::instance::Instance;
-use crate::tcp_abridged::TcpAbridged;
-use crate::session::Session;
+use tokio::net::{TcpListener, TcpStream};
+use tokio::sync::Mutex;
 
-async fn client_thread(instance: Arc<Instance>, mut socket: TcpStream) -> Result<(), Box<dyn Error>> {
+async fn client_thread(
+    instance: Arc<Instance>,
+    mut socket: TcpStream,
+) -> Result<(), Box<dyn Error>> {
     let mut buf = [0u8; 1];
 
     socket.read_exact(&mut buf[..1]).await?;
@@ -48,7 +54,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         let instance_clone = instance.clone();
         tokio::spawn(async move {
             match client_thread(instance_clone, socket).await {
-                Ok(_) => {},
+                Ok(_) => {}
                 Err(e) => println!("Client returned an error: {}", e),
             }
         });

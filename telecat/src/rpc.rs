@@ -6,13 +6,20 @@ use cattl::TlObject;
 use crate::session::Session;
 
 #[macro_export]
+macro_rules! unsafe_cast {
+    ($o:expr, $t:ty) => {
+        unsafe {
+            let (raw, alloc): (*mut dyn Any, _) = Box::into_raw_with_allocator($o);
+            Box::from_raw_in(raw as *mut $t, alloc)
+        }
+    };
+}
+
+#[macro_export]
 macro_rules! impl_rpc {
     ($h:expr, $f:tt, $t:ty) => {
         ($h, |session, obj| {
-            Box::pin($f(session, unsafe {
-                let (raw, alloc): (*mut dyn Any, _) = Box::into_raw_with_allocator(obj);
-                Box::from_raw_in(raw as *mut $t, alloc)
-            }))
+            Box::pin($f(session, unsafe_cast!(obj, $t)))
         })
     };
 }

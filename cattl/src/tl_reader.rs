@@ -20,7 +20,7 @@ impl TlReader {
             }
         }
 
-        Err(TlError::NoReader)
+        Err(TlError::NoReader(hash))
     }
 
     pub fn add_reader(&mut self, hash: i32, reader: TlReaderFunction) {
