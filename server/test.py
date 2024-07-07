@@ -1,0 +1,21 @@
+import logging
+logging.basicConfig(level=logging.DEBUG)
+
+from pyrogram import Client
+from pyrogram.session.internals.data_center import DataCenter
+from pyrogram.crypto.rsa import PublicKey, server_public_keys
+from typing import Tuple
+
+def DataCenter__new__(cls, dc_id: int, test_mode: bool, ipv6: bool, media: bool) -> Tuple[str, int]:
+    return "127.0.0.1", 443
+
+DataCenter.__new__ = DataCenter__new__
+
+server_public_keys[0x97b5df763e13aeff - (1 << 64)] = PublicKey(
+    int("00B82B3677AC435B4D7F7C99892F17BB88DE8DE5C0C046DDB1B3164EF7F233E771DA159CAA6023ABDF938BCDFE6228C840F0EEF6AB2F1535D51FA0A6A4D4B70D9CFD1BB08930A37987B2F50086623039357F8EBA65CAD5F25DC86942CF7C7E02384C75EB7BCD42D4E21BB38C8BECA25C6BBA6339DEBAE7B12030E02F67C96019B30F84C8A0DFEAD5439A472492E6F42E22AB5BBA7EF3CB2F9B2A73FB394B341C897A13E43F111C1A4833BA7A912DDCC8BB9F2D33EC6ACB21FCB2AFE1B6D0262497AF9ED34BC0F71519E976D1BF3B93CA5173C2043CAEB130F5429DE0D7FF79D2F7E355A298FAFA396B53784F9442FBF1FF55D2BABEAC3D77E02C7AE4A614858327", 16),
+    int("010001", 16)
+)
+
+client = Client(":memory:", 1234, "aaaa", in_memory=True)
+client.start()
+print(client.get_me())

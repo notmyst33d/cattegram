@@ -1,0 +1,10 @@
+[package]
+name = "catte-tl-schema"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+catte-tl-buffer = { path = "../tl-buffer" }
+
+[build-dependencies]
+catte-tl-compiler = { path = "../tl-compiler" }
