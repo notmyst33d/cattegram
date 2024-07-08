@@ -1,9 +1,13 @@
-use crate::{clone_sized_slice, println_yellow, storage::Storage, transport::Transport};
+use crate::{
+    clone_sized_slice, println_yellow, storage::Storage, transport::Transport,
+    Config as ServerConfig,
+};
 use catte_tl_buffer::TlBuffer;
 use catte_tl_schema::*;
 use flate2::read::GzDecoder;
 use grammers_crypto::{decrypt_data_server_v2, encrypt_data_server_v2, AuthKey, DequeBuffer};
 use num_bigint::BigUint;
+use std::sync::Arc;
 use std::{
     error::Error,
     io::Read,
@@ -65,12 +69,13 @@ pub struct Session {
     pub login_flow: LoginFlow,
     pub id: i64,
     pub seq_no: i32,
+    config: Arc<ServerConfig>,
     transport: Box<dyn Transport>,
     last_msg_id: i64,
 }
 
 impl Session {
-    pub fn new(transport: Box<dyn Transport>) -> Self {
+    pub fn new(config: Arc<ServerConfig>, transport: Box<dyn Transport>) -> Self {
         Self {
             closed: false,
             storage: Storage::new(),
@@ -82,6 +87,7 @@ impl Session {
             login_flow: LoginFlow::new(),
             id: 0,
             seq_no: 0,
+            config,
             transport,
             last_msg_id: 0,
         }

@@ -1,0 +1,17 @@
+# Port to listen on, using anything other than 443 will
+# require heavy modifications to clients, so its not
+# recommended to change it
+#
+# If you have an HTTPS server you can use cattenx
+# as a reverse proxy, it supports proxying to both
+# HTTPS and MTProto using a single 443 port
+#
+# The default configuration uses cattenx, so the
+# port is set to 8443
+port = 8443
+
+# RSA key for auth_key generation
+rsa_key = "server.key"
+
+# Database, files, etc location
+data = "data"

@@ -7,16 +7,19 @@ mod tcp_abridged_combined;
 mod transport;
 
 use crate::session::Session;
+use crate::transport::Transport;
 use aes::cipher::{KeyIvInit, StreamCipher};
 use catte_tl_schema::{RpcError, RpcResult, SchemaObject};
+use serde::Deserialize;
+use std::env;
 use std::error::Error;
 use std::sync::Arc;
 use tcp_abridged_combined::TcpAbridgedCombined;
+use tokio::fs;
 use tokio::io::AsyncReadExt;
 use tokio::net::{TcpListener, TcpStream};
 use tokio::runtime::Builder;
 use tokio::sync::Mutex;
-use transport::Transport;
 
 type Aes256Ctr = ctr::Ctr32BE<aes::Aes256>;
 
@@ -68,7 +71,17 @@ macro_rules! time {
     }};
 }
 
-async fn client_thread(mut socket: TcpStream) -> Result<(), Box<dyn Error + Send + Sync>> {
+#[derive(Deserialize)]
+struct Config {
+    pub port: u16,
+    pub rsa_key: String,
+    pub data: String,
+}
+
+async fn client_thread(
+    config: Arc<Config>,
+    mut socket: TcpStream,
+) -> Result<(), Box<dyn Error + Send + Sync>> {
     let mut buf = [0u8; 1];
 
     socket.read_exact(&mut buf[..1]).await?;
@@ -94,7 +107,7 @@ async fn client_thread(mut socket: TcpStream) -> Result<(), Box<dyn Error + Send
         ))
     };
 
-    let session = Arc::new(Mutex::new(Session::new(transport)));
+    let session = Arc::new(Mutex::new(Session::new(config, transport)));
 
     loop {
         let messages = session.lock().await.receive().await?;
@@ -137,13 +150,16 @@ async fn client_thread(mut socket: TcpStream) -> Result<(), Box<dyn Error + Send
 }
 
 async fn async_main() -> Result<(), Box<dyn Error>> {
-    let listener = TcpListener::bind("0.0.0.0:443").await?;
-    println!("Telecat started");
+    let config: Arc<Config> = Arc::new(toml::from_str(
+        &fs::read_to_string(env::var("CONFIG").unwrap_or("config.toml".into())).await?,
+    )?);
+    let listener = TcpListener::bind(format!("0.0.0.0:{}", config.port)).await?;
 
     loop {
         let (socket, _) = listener.accept().await?;
+        let config = config.clone();
         tokio::spawn(async {
-            match client_thread(socket).await {
+            match client_thread(config, socket).await {
                 Ok(_) => {}
                 Err(e) => println!("client returned an error: {}", e),
             }

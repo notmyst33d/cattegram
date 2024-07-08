@@ -26,7 +26,7 @@ impl Transport for TcpAbridgedCombined {
     async fn read(&mut self) -> Result<(Vec<u8>, bool), Box<dyn Error + Send + Sync>> {
         let mut buf = vec![0];
         self.socket.read_exact(&mut buf[..1]).await?;
-    
+
         self.encrypt
             .as_mut()
             .map(|c| c.apply_keystream(&mut buf[..1]));
