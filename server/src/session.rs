@@ -1,7 +1,5 @@
-use crate::{
-    clone_sized_slice, println_yellow, storage::Storage, transport::Transport,
-    Config as ServerConfig,
-};
+use crate::RuntimeConfig;
+use crate::{clone_sized_slice, storage::Storage, transport::Transport, Config as ServerConfig};
 use catte_tl_buffer::TlBuffer;
 use catte_tl_schema::*;
 use flate2::read::GzDecoder;
@@ -46,6 +44,7 @@ impl AuthKeyFlow {
 
 pub struct LoginFlow {
     pub phone_number: String,
+    pub phone_number_verified: bool,
     pub code: String,
 }
 
@@ -53,6 +52,7 @@ impl LoginFlow {
     pub fn new() -> Self {
         Self {
             phone_number: String::new(),
+            phone_number_verified: false,
             code: String::new(),
         }
     }
@@ -69,16 +69,21 @@ pub struct Session {
     pub login_flow: LoginFlow,
     pub id: i64,
     pub seq_no: i32,
-    config: Arc<ServerConfig>,
+    pub config: Arc<ServerConfig>,
+    pub runtime_config: Arc<RuntimeConfig>,
     transport: Box<dyn Transport>,
     last_msg_id: i64,
 }
 
 impl Session {
-    pub fn new(config: Arc<ServerConfig>, transport: Box<dyn Transport>) -> Self {
+    pub async fn new(
+        config: Arc<ServerConfig>,
+        runtime_config: Arc<RuntimeConfig>,
+        transport: Box<dyn Transport>,
+    ) -> Self {
         Self {
             closed: false,
-            storage: Storage::new(),
+            storage: Storage::new(config.data.clone()).await,
             authorized: false,
             encrypted: false,
             auth_key_flow: AuthKeyFlow::new(),
@@ -88,6 +93,7 @@ impl Session {
             id: 0,
             seq_no: 0,
             config,
+            runtime_config,
             transport,
             last_msg_id: 0,
         }
@@ -100,25 +106,14 @@ impl Session {
         let auth_key_id = i64::from_le_bytes(clone_sized_slice!(&raw[..8], 8));
 
         if !self.encrypted && auth_key_id != 0 {
-            if let Ok(auth_key) = self.storage.get_auth_key(auth_key_id) {
+            self.storage.get_auth_key(auth_key_id).await.unwrap();
+            if let Ok(auth_key) = self.storage.get_auth_key(auth_key_id).await {
                 self.auth_key = AuthKey::from_bytes(auth_key);
                 self.auth_key_id = auth_key_id;
                 self.encrypted = true;
             } else {
                 self.close().await?;
-                return Err(format!("Cannot find auth_key for {}", auth_key_id).into());
-            }
-        } else if self.encrypted && auth_key_id != self.auth_key_id {
-            // In case a client suddenly changes its auth_key_id
-            // I dont know if this will ever happen but better
-            // safe than sorry
-            if let Ok(auth_key) = self.storage.get_auth_key(auth_key_id) {
-                self.auth_key = AuthKey::from_bytes(auth_key);
-                self.auth_key_id = auth_key_id;
-                self.encrypted = true;
-            } else {
-                self.close().await?;
-                return Err(format!("Cannot refresh auth_key for {}", auth_key_id).into());
+                return Err(format!("cannot find auth_key for {}", auth_key_id).into());
             }
         }
 
@@ -127,20 +122,28 @@ impl Session {
 
             let mut data = TlBuffer::new(raw_data);
             let _salt = data.read_long()?; // TODO: Do something with the salt
-            self.id = data.read_long()?; // TODO: Maybe do something?
+            let session_id = data.read_long()?;
             let msg_id = data.read_long()?;
             let seq_no = data.read_int()?;
             let length = data.read_int()?;
 
             if quick_ack {
-                println_yellow!(
-                    "QUICK ACK",
-                    "raw_ack_token: {}, ack_token: {}, msg_id: {}",
-                    ack_token ^ (1 << 31),
-                    ack_token,
-                    msg_id
-                );
-                self.transport.write_raw(&ack_token.to_be_bytes()).await?;
+                self.transport.write_quick_ack(ack_token).await?;
+            }
+
+            if session_id == 0 {
+                return Err("cannot have session_id == 0".into());
+            }
+
+            if self.id == 0 && session_id != 0 {
+                self.id = session_id;
+                if let Ok(_) = self.storage.get_user_by_session_id(self.auth_key_id).await {
+                    self.authorized = true;
+                }
+            }
+
+            if self.id != session_id {
+                return Err("session_id changed".into());
             }
 
             fn read_data(
@@ -150,7 +153,28 @@ impl Session {
             ) -> Result<Vec<(i64, i32, SchemaObject)>, Box<dyn Error + Send + Sync>> {
                 match catte_tl_schema::read(&mut data.into()) {
                     Ok(result) => match result {
-                        SchemaObject::MsgContainer(messages) => Ok(messages),
+                        SchemaObject::MsgContainer(messages) => Ok(messages
+                            .into_iter()
+                            .map(
+                                |m| -> Result<
+                                    Vec<(i64, i32, SchemaObject)>,
+                                    Box<dyn Error + Send + Sync>,
+                                > {
+                                    Ok(match m.2 {
+                                        SchemaObject::GzipPacked(obj) => {
+                                            let mut decoder = GzDecoder::new(&obj.packed_data[..]);
+                                            let mut unpacked = vec![];
+                                            decoder.read_to_end(&mut unpacked)?;
+                                            read_data(msg_id, seq_no, unpacked)?
+                                        }
+                                        _ => vec![m],
+                                    })
+                                },
+                            )
+                            .collect::<Result<Vec<_>, _>>()?
+                            .into_iter()
+                            .flatten()
+                            .collect::<Vec<_>>()),
                         SchemaObject::GzipPacked(obj) => {
                             let mut decoder = GzDecoder::new(&obj.packed_data[..]);
                             let mut unpacked = vec![];
@@ -238,97 +262,72 @@ impl Session {
         self.seq_no - 1
     }
 
-    pub fn get_user(&self) -> User {
-        User {
-            is_self: true,
-            contact: false,
-            mutual_contact: false,
-            deleted: false,
-            bot: false,
-            bot_chat_history: false,
-            bot_nochats: false,
-            verified: false,
-            restricted: false,
-            min: false,
-            bot_inline_geo: false,
-            support: false,
-            scam: false,
-            apply_min_photo: false,
-            fake: false,
-            bot_attach_menu: false,
-            premium: false,
-            attach_menu_enabled: false,
-            bot_can_edit: false,
-            id: self.get_user_id(),
-            access_hash: None,
-            first_name: Some("telecat".into()),
-            last_name: None,
-            username: Some("telecat".into()),
-            phone: Some("79991111111".into()),
-            photo: None,
-            status: None,
-            bot_info_version: None,
-            restriction_reason: None,
-            bot_inline_placeholder: None,
-            lang_code: None,
-            emoji_status: None,
-            usernames: None,
-        }
+    pub async fn get_self(&self) -> Result<User, sqlx::Error> {
+        let mut u = self.storage.get_user_by_session_id(self.auth_key_id).await?;
+        u.is_self = true;
+        Ok(u)
     }
 
-    pub fn get_user_full(&self) -> UserFull {
-        UserFull {
-            blocked: false,
-            phone_calls_available: false,
-            phone_calls_private: false,
-            can_pin_message: true,
-            has_scheduled: false,
-            video_calls_available: false,
-            voice_messages_forbidden: false,
-            translations_disabled: false,
-            id: self.get_user_id(),
-            about: Some("Hello World from telecat!".into()),
-            settings: PeerSettings {
-                report_spam: false,
-                add_contact: false,
-                block_contact: false,
-                share_contact: false,
-                need_contacts_exception: false,
-                report_geo: false,
-                autoarchived: false,
-                invite_members: false,
-                request_chat_broadcast: false,
-                geo_distance: None,
-                request_chat_title: None,
-                request_chat_date: None,
-            },
-            personal_photo: None,
-            profile_photo: None,
-            fallback_photo: None,
-            notify_settings: PeerNotifySettings {
-                show_previews: None,
-                silent: None,
-                mute_until: None,
-                ios_sound: None,
-                android_sound: None,
-                other_sound: None,
-            },
-            bot_info: None,
-            pinned_msg_id: None,
-            common_chats_count: 0,
-            folder_id: None,
-            ttl_period: None,
-            theme_emoticon: None,
-            private_forward_name: None,
-            bot_group_admin_rights: None,
-            bot_broadcast_admin_rights: None,
-            premium_gifts: None,
-            wallpaper: None,
-        }
+    pub async fn get_self_peer(&self) -> Result<InputPeerUser, sqlx::Error> {
+        Ok(InputPeerUser {
+            user_id: self.get_self().await?.id,
+            access_hash: 0,
+        })
     }
 
-    pub fn get_user_id(&self) -> i64 {
-        10000
+    pub async fn get_self_full(&self) -> Result<(User, UserFull), sqlx::Error> {
+        let user = self.get_self().await?;
+        Ok((
+            user.clone(),
+            UserFull {
+                blocked: false,
+                phone_calls_available: false,
+                phone_calls_private: false,
+                can_pin_message: true,
+                has_scheduled: false,
+                video_calls_available: false,
+                voice_messages_forbidden: false,
+                translations_disabled: false,
+                id: user.id,
+                about: None,
+                settings: PeerSettings {
+                    report_spam: false,
+                    add_contact: false,
+                    block_contact: false,
+                    share_contact: false,
+                    need_contacts_exception: false,
+                    report_geo: false,
+                    autoarchived: false,
+                    invite_members: false,
+                    request_chat_broadcast: false,
+                    geo_distance: None,
+                    request_chat_title: None,
+                    request_chat_date: None,
+                },
+                personal_photo: None,
+                profile_photo: None,
+                fallback_photo: None,
+                notify_settings: PeerNotifySettings {
+                    show_previews: None,
+                    silent: None,
+                    mute_until: None,
+                    ios_sound: None,
+                    android_sound: None,
+                    other_sound: None,
+                },
+                bot_info: None,
+                pinned_msg_id: None,
+                common_chats_count: 0,
+                folder_id: None,
+                ttl_period: None,
+                theme_emoticon: None,
+                private_forward_name: None,
+                bot_group_admin_rights: None,
+                bot_broadcast_admin_rights: None,
+                premium_gifts: None,
+                wallpaper: None,
+            },
+        ))
     }
 
     #[allow(dead_code)]

@@ -1513,11 +1513,15 @@ help.getNearestDc#1fb33026 = NearestDc;
 
 auth.sendCode#a677244f phone_number:string api_id:int api_hash:string settings:CodeSettings = auth.SentCode;
 auth.signIn#8d52a951 flags:# phone_number:string phone_code_hash:string phone_code:flags.0?string email_verification:flags.1?EmailVerification = auth.Authorization;
+auth.signUp#80eee427 phone_number:string phone_code_hash:string first_name:string last_name:string = auth.Authorization;
 
 updates.getState#edd4882a = updates.State;
 
 users.getUsers#d91a548 id:Vector<InputUser> = Vector<User>;
 users.getFullUser#b60f5918 id:InputUser = users.UserFull;
+
+account.updateUsername#3e0bdd7c username:string = User;
+contacts.resolveUsername#f93ccba3 username:string = contacts.ResolvedPeer;
 
 langpack.getLanguages#800fd57d = Vector<LangPackLanguage>;
 

@@ -1,6 +1,6 @@
-mod prime;
+#![feature(async_closure)]
+
 mod rpc;
-mod rsa;
 mod session;
 mod storage;
 mod tcp_abridged_combined;
@@ -9,11 +9,17 @@ mod transport;
 use crate::session::Session;
 use crate::transport::Transport;
 use aes::cipher::{KeyIvInit, StreamCipher};
+use base64::prelude::BASE64_STANDARD;
+use base64::Engine;
+use catte_tl_buffer::TlBuffer;
 use catte_tl_schema::{RpcError, RpcResult, SchemaObject};
+use grammers_crypto::sha1;
+use num_bigint::BigUint;
 use serde::Deserialize;
 use std::env;
 use std::error::Error;
 use std::sync::Arc;
+use storage::Storage;
 use tcp_abridged_combined::TcpAbridgedCombined;
 use tokio::fs;
 use tokio::io::AsyncReadExt;
@@ -73,13 +79,22 @@ macro_rules! time {
 
 #[derive(Deserialize)]
 struct Config {
-    pub port: u16,
+    pub listen_port: u16,
+    pub actual_port: u16,
+    pub host: String,
     pub rsa_key: String,
     pub data: String,
 }
 
+struct RuntimeConfig {
+    pub rsa_modulus: BigUint,
+    pub rsa_private_exponent: BigUint,
+    pub rsa_fingerprint: i64,
+}
+
 async fn client_thread(
     config: Arc<Config>,
+    runtime_config: Arc<RuntimeConfig>,
     mut socket: TcpStream,
 ) -> Result<(), Box<dyn Error + Send + Sync>> {
     let mut buf = [0u8; 1];
@@ -107,7 +122,9 @@ async fn client_thread(
         ))
     };
 
-    let session = Arc::new(Mutex::new(Session::new(config, transport)));
+    let session = Arc::new(Mutex::new(
+        Session::new(config, runtime_config, transport).await,
+    ));
 
     loop {
         let messages = session.lock().await.receive().await?;
@@ -119,8 +136,8 @@ async fn client_thread(
                     responses.push(SchemaObject::RpcResult(RpcResult {
                         req_msg_id: message.0,
                         result: Box::new(SchemaObject::RpcError(RpcError {
-                            error_code: 0,
-                            error_message: format!("deserialization error: {}", e),
+                            error_code: 500,
+                            error_message: "INTERNAL".to_string(),
                         })),
                     }));
                 }
@@ -133,8 +150,8 @@ async fn client_thread(
                         Err(e) => {
                             println_yellow!("RPC ERROR", "{}", e);
                             SchemaObject::RpcError(RpcError {
-                                error_code: 0,
-                                error_message: e.to_string(),
+                                error_code: 500,
+                                error_message: "INTERNAL".to_string(),
                             })
                         }
                     };
@@ -153,13 +170,48 @@ async fn async_main() -> Result<(), Box<dyn Error>> {
     let config: Arc<Config> = Arc::new(toml::from_str(
         &fs::read_to_string(env::var("CONFIG").unwrap_or("config.toml".into())).await?,
     )?);
-    let listener = TcpListener::bind(format!("0.0.0.0:{}", config.port)).await?;
+    let listener = TcpListener::bind(format!("0.0.0.0:{}", config.listen_port)).await?;
+
+    if !fs::metadata(&config.data)
+        .await
+        .map(|x| x.is_dir())
+        .unwrap_or(false)
+    {
+        fs::create_dir(&config.data).await?;
+    }
+
+    Storage::new(config.data.clone()).await;
+
+    let rsa_b64 = fs::read_to_string(&config.rsa_key)
+        .await
+        .unwrap()
+        .replace("-----BEGIN RSA PRIVATE KEY-----", "")
+        .replace("-----END RSA PRIVATE KEY-----", "")
+        .replace("\n", "")
+        .replace("\r", "");
+
+    let data = BASE64_STANDARD.decode(&rsa_b64).unwrap();
+    let modulus = &data[12..268];
+    let public_exponent = &data[270..273];
+    let private_exponent = &data[278..534];
+    let mut b1 = TlBuffer::new(vec![]);
+    let mut b2 = TlBuffer::new(vec![]);
+    b1.write_bytes(modulus);
+    b2.write_bytes(public_exponent);
+    let fingerprint = clone_sized_slice!(&sha1!(b1.data(), b2.data())[12..], 8);
+
+    let runtime_config = Arc::new(RuntimeConfig {
+        rsa_modulus: BigUint::from_bytes_be(modulus),
+        rsa_private_exponent: BigUint::from_bytes_be(private_exponent),
+        rsa_fingerprint: i64::from_le_bytes(fingerprint),
+    });
 
     loop {
         let (socket, _) = listener.accept().await?;
         let config = config.clone();
+        let runtime_config = runtime_config.clone();
         tokio::spawn(async {
-            match client_thread(config, socket).await {
+            match client_thread(config, runtime_config, socket).await {
                 Ok(_) => {}
                 Err(e) => println!("client returned an error: {}", e),
             }

@@ -8,7 +8,13 @@
 #
 # The default configuration uses cattenx, so the
 # port is set to 8443
-port = 8443
+listen_port = 443
+
+# Used for DC configs
+actual_port = 443
+
+# IP of the server
+host = "192.168.0.102"
 
 # RSA key for auth_key generation
 rsa_key = "server.key"

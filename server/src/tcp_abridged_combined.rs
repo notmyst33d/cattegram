@@ -2,9 +2,9 @@ use crate::transport::Transport;
 use crate::Aes256Ctr;
 use aes::cipher::StreamCipher;
 use async_trait::async_trait;
-use std::error::Error;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
+
 pub struct TcpAbridgedCombined {
     socket: TcpStream,
     encrypt: Option<Aes256Ctr>,
@@ -23,7 +23,7 @@ impl TcpAbridgedCombined {
 
 #[async_trait]
 impl Transport for TcpAbridgedCombined {
-    async fn read(&mut self) -> Result<(Vec<u8>, bool), Box<dyn Error + Send + Sync>> {
+    async fn read(&mut self) -> Result<(Vec<u8>, bool), std::io::Error> {
         let mut buf = vec![0];
         self.socket.read_exact(&mut buf[..1]).await?;
 
@@ -68,7 +68,7 @@ impl Transport for TcpAbridgedCombined {
         Ok((buf, quick_ack))
     }
 
-    async fn write(&mut self, data: &[u8]) -> Result<(), Box<dyn Error + Send + Sync>> {
+    async fn write(&mut self, data: &[u8]) -> Result<(), std::io::Error> {
         let length = if data.len() / 4 >= 0x7f {
             let mut b = (data.len() as u32 / 4).to_le_bytes();
             b.rotate_right(1);
@@ -87,8 +87,8 @@ impl Transport for TcpAbridgedCombined {
         Ok(())
     }
 
-    async fn write_raw(&mut self, data: &[u8]) -> Result<(), Box<dyn Error + Send + Sync>> {
-        let mut encrypted_data = data.to_vec();
+    async fn write_quick_ack(&mut self, ack_token: u32) -> Result<(), std::io::Error> {
+        let mut encrypted_data = ack_token.to_be_bytes();
 
         self.decrypt
             .as_mut()
@@ -98,7 +98,7 @@ impl Transport for TcpAbridgedCombined {
         Ok(())
     }
 
-    async fn close(&mut self) -> Result<(), Box<dyn Error + Send + Sync>> {
+    async fn close(&mut self) -> Result<(), std::io::Error> {
         self.socket.shutdown().await?;
         Ok(())
     }

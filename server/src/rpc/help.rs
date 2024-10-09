@@ -5,28 +5,79 @@ use std::{error::Error, sync::Arc};
 use tokio::sync::Mutex;
 
 pub async fn rpc_help_get_config(
-    _session: Arc<Mutex<Session>>,
+    session: Arc<Mutex<Session>>,
     message: rpc::Message<HelpGetConfig>,
 ) -> Result<SchemaObject, Box<dyn Error + Send + Sync>> {
+    let locked_session = session.lock().await;
     ok!(
         message,
         Config {
             date: time!(),
             expires: time!() + 1800,
             test_mode: false,
-            this_dc: 1,
-            dc_options: vec![DcOption {
-                id: 1,
-                ip_address: "127.0.0.1".into(),
-                port: 8443,
-                ipv6: false,
-                media_only: false,
-                tcpo_only: false,
-                cdn: false,
-                is_static: false,
-                this_port_only: false,
-                secret: None,
-            }],
+            this_dc: 2,
+            dc_options: vec![
+                DcOption {
+                    id: 1,
+                    ip_address: locked_session.config.host.clone(),
+                    port: locked_session.config.actual_port as i32,
+                    ipv6: false,
+                    media_only: false,
+                    tcpo_only: false,
+                    cdn: false,
+                    is_static: false,
+                    this_port_only: true,
+                    secret: None,
+                },
+                DcOption {
+                    id: 2,
+                    ip_address: locked_session.config.host.clone(),
+                    port: locked_session.config.actual_port as i32,
+                    ipv6: false,
+                    media_only: false,
+                    tcpo_only: false,
+                    cdn: false,
+                    is_static: false,
+                    this_port_only: true,
+                    secret: None,
+                },
+                DcOption {
+                    id: 3,
+                    ip_address: locked_session.config.host.clone(),
+                    port: locked_session.config.actual_port as i32,
+                    ipv6: false,
+                    media_only: false,
+                    tcpo_only: false,
+                    cdn: false,
+                    is_static: false,
+                    this_port_only: true,
+                    secret: None,
+                },
+                DcOption {
+                    id: 4,
+                    ip_address: locked_session.config.host.clone(),
+                    port: locked_session.config.actual_port as i32,
+                    ipv6: false,
+                    media_only: false,
+                    tcpo_only: false,
+                    cdn: false,
+                    is_static: false,
+                    this_port_only: true,
+                    secret: None,
+                },
+                DcOption {
+                    id: 5,
+                    ip_address: locked_session.config.host.clone(),
+                    port: locked_session.config.actual_port as i32,
+                    ipv6: false,
+                    media_only: false,
+                    tcpo_only: false,
+                    cdn: false,
+                    is_static: false,
+                    this_port_only: true,
+                    secret: None,
+                }
+            ],
             dc_txt_domain_name: "localhost".into(),
             chat_size_max: 200,
             megagroup_size_max: 200000,
@@ -81,8 +132,8 @@ pub async fn rpc_help_get_nearest_dc(
         message,
         NearestDc {
             country: "en".to_string(),
-            this_dc: 1,
-            nearest_dc: 1,
+            this_dc: 2,
+            nearest_dc: 2,
         }
     )
 }
